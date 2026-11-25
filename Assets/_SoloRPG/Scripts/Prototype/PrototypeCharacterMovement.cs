@@ -11,6 +11,7 @@ namespace SoloRPG.Prototype
         [SerializeField] private InputActionAsset inputActions;
         [SerializeField] private CharacterController characterController;
         [SerializeField] private BoxCollider floor;
+        [SerializeField] private PrototypeFollowCamera followCamera;
 
         private InputAction moveAction;
 
@@ -27,12 +28,16 @@ namespace SoloRPG.Prototype
 
         private void Update()
         {
+            Quaternion heading = followCamera.HorizontalRotation;
+            transform.rotation = heading;
+
             Vector2 input = Vector2.ClampMagnitude(moveAction.ReadValue<Vector2>(), 1f);
             if (input == Vector2.zero)
                 return;
 
             Vector3 position = transform.position;
-            Vector3 requested = position + new Vector3(input.x, 0f, input.y) * (MoveSpeed * Time.deltaTime);
+            Vector3 direction = heading * new Vector3(input.x, 0f, input.y);
+            Vector3 requested = position + direction * (MoveSpeed * Time.deltaTime);
             Bounds floorBounds = floor.bounds;
             Bounds characterBounds = characterController.bounds;
 
