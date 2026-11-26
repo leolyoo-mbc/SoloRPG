@@ -10,6 +10,7 @@ namespace SoloRPG.Prototype
         private const float ShoulderOffset = 0.55f;
         private const float MouseDegreesPerPixel = 0.12f;
         private const float StickDegreesPerSecond = 120f;
+        private const float StartingPitch = 12f;
 
         [SerializeField] private Transform target;
         [SerializeField] private InputActionAsset inputActions;
@@ -17,10 +18,12 @@ namespace SoloRPG.Prototype
 
         private InputAction lookAction;
         private float yaw;
-        private float pitch = 12f;
+        private float pitch = StartingPitch;
         private bool ownsCursorLock;
 
         public Quaternion HorizontalRotation => Quaternion.Euler(0f, yaw, 0f);
+        public bool CanUseMouse => ownsCursorLock && Cursor.lockState == CursorLockMode.Locked;
+        public bool CapturedMouseThisFrame { get; private set; }
 
         private void Awake()
         {
@@ -39,19 +42,29 @@ namespace SoloRPG.Prototype
 
         private void Start()
         {
+            ResetView();
+        }
+
+        public void ResetView()
+        {
+            ReleaseCursor();
             yaw = target.eulerAngles.y;
+            pitch = StartingPitch;
             LateUpdate();
         }
 
         private void Update()
         {
+            CapturedMouseThisFrame = false;
             bool hasGameFocus = HasGameFocus();
             if (!hasGameFocus || Keyboard.current?.escapeKey.wasPressedThisFrame == true)
                 ReleaseCursor();
             else if (Mouse.current?.leftButton.wasPressedThisFrame == true)
             {
+                bool wasCaptured = CanUseMouse;
                 Cursor.lockState = CursorLockMode.Locked;
                 ownsCursorLock = true;
+                CapturedMouseThisFrame = !wasCaptured && CanUseMouse;
             }
 
             Vector2 look = lookAction.ReadValue<Vector2>();
@@ -89,6 +102,7 @@ namespace SoloRPG.Prototype
 
         private void ReleaseCursor()
         {
+            CapturedMouseThisFrame = false;
             if (!ownsCursorLock)
                 return;
 
